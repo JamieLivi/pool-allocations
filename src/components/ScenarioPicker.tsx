@@ -1,23 +1,35 @@
-import type { ScenarioBuilder } from '../sim/scenarios';
+import type {
+  LenderInput,
+  ScenarioBuilder,
+  ScenarioConfig,
+  ScenarioTunable,
+} from '../sim/scenarios';
 import { fmtPct } from '../format';
+import { LenderEditor } from './LenderEditor';
 import { RichText } from './RichText';
 
 type Props = {
   scenarios: ScenarioBuilder[];
   activeKey: string;
-  targetUtil: number;
+  config: ScenarioConfig;
+  tunables: ScenarioTunable[];
   onChangeScenario: (key: string) => void;
-  onChangeUtil: (util: number) => void;
+  onChangeConfig: (next: ScenarioConfig) => void;
 };
 
 export function ScenarioPicker({
   scenarios,
   activeKey,
-  targetUtil,
+  config,
+  tunables,
   onChangeScenario,
-  onChangeUtil,
+  onChangeConfig,
 }: Props) {
   const active = scenarios.find((s) => s.key === activeKey);
+  const update = <K extends keyof ScenarioConfig>(key: K, value: ScenarioConfig[K]) => {
+    onChangeConfig({ ...config, [key]: value });
+  };
+
   return (
     <div className="scenario-picker">
       <div className="scenario-tabs" role="tablist">
@@ -40,29 +52,101 @@ export function ScenarioPicker({
         </div>
       ) : null}
 
-      <div className="util-slider">
-        <div className="util-slider-row">
-          <span className="util-slider-label">Target utilisation</span>
-          <strong className="util-slider-value">{fmtPct(targetUtil, 0)}</strong>
+      {tunables.includes('targetUtil') ? (
+        <div className="util-slider">
+          <div className="util-slider-row">
+            <span className="util-slider-label">Target utilisation</span>
+            <strong className="util-slider-value">{fmtPct(config.targetUtil, 0)}</strong>
+          </div>
+          <input
+            type="range"
+            min={0.1}
+            max={0.99}
+            step={0.01}
+            value={config.targetUtil}
+            onChange={(e) => update('targetUtil', Number(e.target.value))}
+          />
+          <div className="util-slider-extremes">
+            <span>10% (sleepy)</span>
+            <span>99% (saturated)</span>
+          </div>
+          <span className="util-slider-hint">
+            Rescales borrower debts proportionally so pool runs at the chosen
+            util. Higher util means more interest paid out, but pro-rata can run
+            out of capacity for new borrows.
+          </span>
         </div>
-        <input
-          type="range"
-          min={0.1}
-          max={0.99}
-          step={0.01}
-          value={targetUtil}
-          onChange={(e) => onChangeUtil(Number(e.target.value))}
+      ) : null}
+
+      {tunables.includes('lenders') ? (
+        <LenderEditor
+          lenders={config.lenders}
+          onChange={(next: LenderInput[]) => update('lenders', next)}
         />
-        <div className="util-slider-extremes">
-          <span>10% (sleepy)</span>
-          <span>99% (saturated)</span>
+      ) : null}
+
+      {tunables.includes('wave1Count') || tunables.includes('wave2Count') ? (
+        <div className="wave-controls">
+          {tunables.includes('wave1Count') ? (
+            <div className="util-slider">
+              <div className="util-slider-row">
+                <span className="util-slider-label">Wave 1 borrower count</span>
+                <strong className="util-slider-value">{config.wave1Count}</strong>
+              </div>
+              <input
+                type="range"
+                min={5}
+                max={300}
+                step={1}
+                value={config.wave1Count}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  // wave2 can never exceed wave1 — clamp it down if needed.
+                  onChangeConfig({
+                    ...config,
+                    wave1Count: next,
+                    wave2Count: Math.min(config.wave2Count, next),
+                  });
+                }}
+              />
+              <div className="util-slider-extremes">
+                <span>5</span>
+                <span>300</span>
+              </div>
+              <span className="util-slider-hint">
+                Borrowers drawing during the first 6 months of the tenor on a
+                smooth cadence. More borrowers ⇒ smaller individual loans for
+                the same total debt; fewer ⇒ chunkier loans.
+              </span>
+            </div>
+          ) : null}
+          {tunables.includes('wave2Count') ? (
+            <div className="util-slider">
+              <div className="util-slider-row">
+                <span className="util-slider-label">Wave 2 backfill count</span>
+                <strong className="util-slider-value">{config.wave2Count}</strong>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={Math.min(config.wave1Count, 60)}
+                step={1}
+                value={config.wave2Count}
+                onChange={(e) => update('wave2Count', Number(e.target.value))}
+              />
+              <div className="util-slider-extremes">
+                <span>0 (no recycling)</span>
+                <span>{Math.min(config.wave1Count, 60)} (heavy)</span>
+              </div>
+              <span className="util-slider-hint">
+                How many wave-1 borrowers repay early (months 13–18) and are
+                replaced by wave-2 backfill borrowers. Models active capital
+                recycling. Capped at the wave-1 count.
+              </span>
+            </div>
+          ) : null}
         </div>
-        <span className="util-slider-hint">
-          Rescales borrower debts proportionally so pool runs at the chosen
-          util. Higher util means more interest paid out, but pro-rata can run
-          out of capacity for new borrows.
-        </span>
-      </div>
+      ) : null}
     </div>
   );
 }

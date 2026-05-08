@@ -9,6 +9,7 @@ type Props = {
 //   - blank-line separated paragraphs
 //   - lines starting with "• " grouped into <ul><li>
 //   - **bold** runs
+//   - `inline code` runs
 //   - [label](url) links (rendered with target="_blank")
 export function RichText({ text }: Props) {
   const blocks = text.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
@@ -37,14 +38,22 @@ export function RichText({ text }: Props) {
   );
 }
 
-// Tokenise on **bold** OR [label](url) — emit a flat list of nodes.
+// Tokenise on **bold** OR `code` OR [label](url) — emit a flat list of nodes.
+// Bold spans recurse so links/code can nest inside them (the common case is
+// a bolded sentence that opens with a link, e.g. "**[ERC-7540](url) queued…**").
 function renderInline(text: string) {
-  const tokens = text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g);
+  const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g);
   return tokens.map((token, i) => {
     if (token.startsWith('**') && token.endsWith('**')) {
       return (
         // biome-ignore lint/suspicious/noArrayIndexKey: tokens stable
-        <strong key={i}>{token.slice(2, -2)}</strong>
+        <strong key={i}>{renderInline(token.slice(2, -2))}</strong>
+      );
+    }
+    if (token.length >= 2 && token.startsWith('`') && token.endsWith('`')) {
+      return (
+        // biome-ignore lint/suspicious/noArrayIndexKey: tokens stable
+        <code key={i}>{token.slice(1, -1)}</code>
       );
     }
     const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);

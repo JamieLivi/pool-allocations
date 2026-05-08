@@ -282,6 +282,147 @@ body {
   line-height: 1.5;
 }
 
+.wave-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* ─── Lender editor ─────────────────────────────────────────────── */
+.lender-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.lender-editor-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lender-editor-total {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.lender-editor-total strong {
+  color: var(--text);
+}
+
+.lender-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lender-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.5fr) minmax(160px, 1fr) minmax(110px, 1fr) 28px;
+  align-items: center;
+  gap: 8px;
+}
+
+.lender-row-head {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.lender-row input {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  width: 100%;
+}
+
+.lender-row input:focus {
+  outline: 2px solid var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.lender-name-input {
+  font-weight: 600;
+}
+
+.lender-deposit-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lender-deposit-input {
+  flex: 1;
+}
+
+.lender-share-pct {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 40px;
+  text-align: right;
+}
+
+.lender-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.lender-remove:hover:not(:disabled) {
+  background: var(--red-soft);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.lender-remove:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.lender-add {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .lender-row {
+    grid-template-columns: 1fr;
+    padding: 8px;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+  }
+  .lender-row-head {
+    display: none;
+  }
+}
+
 /* ─── Param controls ────────────────────────────────────────────── */
 .param-controls {
   display: flex;
@@ -634,12 +775,25 @@ td.model-cell.model-eqPremium {
   gap: 16px;
 }
 
-.explainer-card-wide {
+.explainer-card-cols-2 {
   grid-column: span 2;
 }
 
+.explainer-card-cols-3 {
+  grid-column: span 3;
+}
+
+/* Below ~3 grid cols (auto-fit minmax 360px), span:3 would overflow.
+   Drop col-3 to span 2; drop both to span 1 on truly narrow viewports. */
+@media (max-width: 1140px) {
+  .explainer-card-cols-3 {
+    grid-column: span 2;
+  }
+}
+
 @media (max-width: 760px) {
-  .explainer-card-wide {
+  .explainer-card-cols-2,
+  .explainer-card-cols-3 {
     grid-column: auto;
   }
 }
@@ -717,10 +871,13 @@ td.model-cell.model-eqPremium {
 }
 
 .explainer-short {
-  margin: 0;
   color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.55;
+}
+
+.explainer-short p {
+  margin: 0;
 }
 
 .explainer-card section h4 {
@@ -736,6 +893,24 @@ td.model-cell.model-eqPremium {
   color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.6;
+}
+
+.explainer-card code,
+.explainer-short code,
+.scenario-description code {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--accent-hover);
+  /* Long formulas like `weight_i = passVolume × freeCapacity_i / totalFreeCapacity`
+     should wrap inside the chip rather than overflow narrow columns. Allow normal
+     whitespace breaking, then fall back to breaking arbitrary chars (incl. inside
+     long camelCase identifiers) only when nothing else can break. */
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .fairness-list {

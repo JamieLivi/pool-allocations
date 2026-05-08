@@ -6,7 +6,7 @@ import { ResultsTable } from './components/ResultsTable';
 import { ScenarioPicker } from './components/ScenarioPicker';
 import { fmtPct, fmtUsd } from './format';
 import { runAllModels } from './sim/models';
-import { SCENARIO_BUILDERS, getScenarioBuilder } from './sim/scenarios';
+import { SCENARIO_BUILDERS, getScenarioBuilder, type ScenarioConfig } from './sim/scenarios';
 import type { ModelKey, SimParams } from './sim/types';
 import './App.css';
 
@@ -31,12 +31,12 @@ const MODEL_ORDER: ModelKey[] = [
 export default function App() {
   const [params, setParams] = useState<SimParams>(DEFAULT_PARAMS);
   const [scenarioKey, setScenarioKey] = useState<string>(SCENARIO_BUILDERS[0].key);
-  const [targetUtil, setTargetUtil] = useState<number>(
-    SCENARIO_BUILDERS[0].defaultTargetUtil,
+  const [scenarioConfig, setScenarioConfig] = useState<ScenarioConfig>(
+    SCENARIO_BUILDERS[0].defaultConfig,
   );
 
   const builder = useMemo(() => getScenarioBuilder(scenarioKey), [scenarioKey]);
-  const scenario = useMemo(() => builder.build(targetUtil), [builder, targetUtil]);
+  const scenario = useMemo(() => builder.build(scenarioConfig), [builder, scenarioConfig]);
 
   const effectiveParams: SimParams = useMemo(
     () => ({ ...params, tenor: scenario.tenor }),
@@ -52,7 +52,7 @@ export default function App() {
   const handleScenarioChange = (key: string) => {
     setScenarioKey(key);
     const next = getScenarioBuilder(key);
-    setTargetUtil(next.defaultTargetUtil);
+    setScenarioConfig(next.defaultConfig);
   };
 
   const totalDeposit = scenario.lenderEvents.reduce((s, l) => s + l.deposit, 0);
@@ -77,9 +77,10 @@ export default function App() {
         <ScenarioPicker
           scenarios={SCENARIO_BUILDERS}
           activeKey={scenarioKey}
-          targetUtil={targetUtil}
+          config={scenarioConfig}
+          tunables={builder.tunables}
           onChangeScenario={handleScenarioChange}
-          onChangeUtil={setTargetUtil}
+          onChangeConfig={setScenarioConfig}
         />
         <div className="scenario-stats">
           <div>

@@ -10,11 +10,13 @@ export function ModelExplainer({ modelKey }: Props) {
   const ex = EXPLAINERS[modelKey];
   return (
     <article
-      className={`explainer-card model-${modelKey}${ex.wide ? ' explainer-card-wide' : ''}`}
+      className={`explainer-card model-${modelKey}${ex.widthCols ? ` explainer-card-cols-${ex.widthCols}` : ''}`}
     >
       <header>
         <span className="model-tag">{ex.name}</span>
-        <p className="explainer-short">{ex.shortDescription}</p>
+        <div className="explainer-short">
+          <RichText text={ex.shortDescription} />
+        </div>
       </header>
 
       <section>
