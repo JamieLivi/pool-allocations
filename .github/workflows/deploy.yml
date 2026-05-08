@@ -36,6 +36,12 @@ jobs:
 
       - name: Build
         run: bun run build
+        env:
+          # GitHub Pages serves the site from /pool-allocations/, so Vite needs
+          # `base: '/pool-allocations/'` baked into asset URLs and the React
+          # Router basename. vite.config.ts reads VITE_BASE; main.tsx uses
+          # import.meta.env.BASE_URL which mirrors it.
+          VITE_BASE: /pool-allocations/
 
       # GitHub Pages serves 404.html on any unmatched path — by copying index.html
       # we let the SPA handle client-side routes like /weighted on direct navigation/refresh.
