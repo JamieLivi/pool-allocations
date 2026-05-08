@@ -94,6 +94,7 @@ export const EXPLAINERS: Record<ModelKey, Explainer> = {
   upsideRoundRobin: {
     key: 'upsideRoundRobin',
     name: 'Round-Robin (flat chunks)',
+    widthCols: 3,
     shortDescription:
       'Upside [DirectedLendingPool](https://github.com/republicfund/borrow-lend-protocol/blob/main/contracts/DirectedLendingPool.sol) + backend allocator — queue rotation with **flat** chunk-per-pass allocation. Each `borrowFrom` ties one specific borrower to one specific lender on-chain.',
     whatItDoes:
@@ -118,7 +119,7 @@ export const EXPLAINERS: Record<ModelKey, Explainer> = {
   upsideWeightedRoundRobin: {
     key: 'upsideWeightedRoundRobin',
     name: 'Weighted Round-Robin\n(capacity-proportional)',
-    widthCols: 2,
+    widthCols: 3,
     shortDescription:
       "Same queue ordering as flat RR but each pass distributes the chunk **split proportionally to each lender's free capacity**. **Identical to Upside Pro-rata under capacity** — same allocation strategy in two different operational shapes. Diverges only when individual borrows exceed available headroom (Pro-rata skips, WRR partial-fills).",
     whatItDoes:
