@@ -1,5 +1,5 @@
 {
-  "name": "round-robin",
+  "name": "pool-allocations",
   "private": true,
   "version": "0.0.0",
   "type": "module",
