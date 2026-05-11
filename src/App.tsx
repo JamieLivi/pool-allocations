@@ -6,7 +6,7 @@ import { ResultsTable } from './components/ResultsTable';
 import { ScenarioPicker } from './components/ScenarioPicker';
 import { fmtPct, fmtUsd } from './format';
 import { runAllModels } from './sim/models';
-import { SCENARIO_BUILDERS, getScenarioBuilder, type ScenarioConfig } from './sim/scenarios';
+import { getScenarioBuilder, SCENARIO_BUILDERS, type ScenarioConfig } from './sim/scenarios';
 import type { ModelKey, SimParams } from './sim/types';
 import './App.css';
 
@@ -44,8 +44,7 @@ export default function App() {
   );
 
   const sim = useMemo(
-    () =>
-      runAllModels(scenario.lenderEvents, scenario.borrowerEvents, effectiveParams),
+    () => runAllModels(scenario.lenderEvents, scenario.borrowerEvents, effectiveParams),
     [scenario, effectiveParams],
   );
 
@@ -65,10 +64,10 @@ export default function App() {
         <div className="eyebrow">Pool allocation visualiser</div>
         <h1>Late-deposit fairness in tokenised credit pools</h1>
         <p className="subtitle">
-          Compare five lender attribution models — DeFi pool-share, vanilla
-          ERC-4626, Upside's pro-rata and round-robin allocators, and Profitr's
-          proposed Equalisation Premium — on identical lender + borrower
-          scenarios. All parameters are live; tweak any control to re-run.
+          Compare five lender attribution models — DeFi pool-share, vanilla ERC-4626, Upside's
+          pro-rata and round-robin allocators, and Profitr's proposed Equalisation Premium — on
+          identical lender + borrower scenarios. All parameters are live; tweak any control to
+          re-run.
         </p>
       </header>
 
@@ -117,9 +116,8 @@ export default function App() {
       <section className="panel">
         <h2>2 · Tune parameters</h2>
         <p className="panel-intro">
-          All five models share the same pool/IP rates. Only the Equalisation
-          Premium model uses the EQ controls. Tenor follows the chosen
-          scenario; util is on the scenario panel.
+          All five models share the same pool/IP rates. Only the Equalisation Premium model uses the
+          EQ controls. Tenor follows the chosen scenario; util is on the scenario panel.
         </p>
         <ParamControls
           params={params}
@@ -131,10 +129,9 @@ export default function App() {
       <section className="panel">
         <h2>3 · Compare lender APRs</h2>
         <p className="panel-intro">
-          APR is annualised over each lender's hold period. The number under
-          each column header is RMS deviation from the Std DeFi baseline in
-          basis points — lower is closer to the canonical DeFi pool-share
-          rate. The small ±bp under each lender's APR is that lender's own
+          APR is annualised over each lender's hold period. The number under each column header is
+          RMS deviation from the Std DeFi baseline in basis points — lower is closer to the
+          canonical DeFi pool-share rate. The small ±bp under each lender's APR is that lender's own
           delta from the baseline.
         </p>
         <ResultsTable idealApr={sim.idealApr} results={sim.results} />
@@ -148,8 +145,8 @@ export default function App() {
       <section className="panel">
         <h2>5 · How each model works</h2>
         <p className="panel-intro">
-          Each card explains what the model does, its design rationale, and how
-          it scores on the four standard mechanism-design fairness axioms.
+          Each card explains what the model does, its design rationale, and how it scores on the
+          four standard mechanism-design fairness axioms.
         </p>
         <div className="explainer-stack">
           {MODEL_ORDER.map((k) => (
@@ -157,14 +154,6 @@ export default function App() {
           ))}
         </div>
       </section>
-
-      <footer className="page-footer">
-        <p>
-          Source simulation:{' '}
-          <code>ai_docs/sim/profitr-equalisation-premium.ts</code>. Methodology
-          docs: <code>local_docs/secured-lending-v13-fairness-analysis.md</code>.
-        </p>
-      </footer>
     </div>
   );
 }
