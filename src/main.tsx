@@ -10,7 +10,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter basename={basename}>
       <Routes>
-        <Route path="/pool-allocations" element={<App />} />
+        {/* basename={import.meta.env.BASE_URL} already strips '/pool-allocations/'
+            in production, so the route path is just '/' regardless of host. */}
+        <Route path="/" element={<App />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
