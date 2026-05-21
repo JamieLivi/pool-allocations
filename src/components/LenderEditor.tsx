@@ -51,8 +51,12 @@ export function LenderEditor({ lenders, onChange }: Props) {
         </div>
         {lenders.map((lender, i) => {
           const sharePct = totalDeposit > 0 ? (lender.deposit / totalDeposit) * 100 : 0;
+          // Stable key: use array index. Including the editable name in the key would
+          // remount the row on every keystroke and steal focus. Input values are fully
+          // controlled by props, so index is safe even on reorder/remove.
           return (
-            <div key={`${i}-${lender.id}`} className="lender-row">
+            // biome-ignore lint/suspicious/noArrayIndexKey: see comment above
+            <div key={i} className="lender-row">
               <input
                 type="text"
                 className="lender-name-input"

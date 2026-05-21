@@ -85,6 +85,38 @@ export function ScenarioPicker({
         />
       ) : null}
 
+      {tunables.includes('wave1RampMonths') ? (
+        <div className="util-slider">
+          <div className="util-slider-row">
+            <span className="util-slider-label">Wave 1 ramp window</span>
+            <strong className="util-slider-value">
+              {config.wave1RampMonths === 0
+                ? 'instant'
+                : `${config.wave1RampMonths.toFixed(1)}m`}
+            </strong>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={18}
+            step={0.5}
+            value={config.wave1RampMonths}
+            onChange={(e) => update('wave1RampMonths', Number(e.target.value))}
+          />
+          <div className="util-slider-extremes">
+            <span>0 (instant draw)</span>
+            <span>18m (slow ramp)</span>
+          </div>
+          <span className="util-slider-hint">
+            How long wave-1 borrowers take to draw their loans, spread evenly
+            over this window. Shorter = sharper ramp-up; 0 = all borrowers
+            draw at T=0 (no ramp); longer = pool sits at lower util for more
+            of the tenor. Watch the Vanilla NAV anchor APR vs late-entrant
+            APRs change as the ramp shifts.
+          </span>
+        </div>
+      ) : null}
+
       {tunables.includes('wave1Count') || tunables.includes('wave2Count') ? (
         <div className="wave-controls">
           {tunables.includes('wave1Count') ? (

@@ -28,10 +28,17 @@ export type ScenarioConfig = {
   targetUtil: number;
   wave1Count: number;
   wave2Count: number;
+  /** Window (in months from T=0) over which wave-1 borrowers draw on a smooth cadence. */
+  wave1RampMonths: number;
   lenders: LenderInput[];
 };
 
-export type ScenarioTunable = 'targetUtil' | 'wave1Count' | 'wave2Count' | 'lenders';
+export type ScenarioTunable =
+  | 'targetUtil'
+  | 'wave1Count'
+  | 'wave2Count'
+  | 'wave1RampMonths'
+  | 'lenders';
 
 export type ScenarioBuilder = {
   key: string;
@@ -62,22 +69,22 @@ const dynamicFlowBuilder: ScenarioBuilder = {
   key: 'dynamic-flow',
   name: 'Dynamic flow',
   description:
-    "A realistic 2-year ramp-up for an actively-managed tokenised credit pool. All times are in **months from pool launch (T=0)**. Six lenders deposit on a staggered schedule:\n\n• **Anchor (50%) at month 0** — underwriter LP committing at first close, before any deployment track record exists.\n• **Two mid-sized lenders (20% + 15%) at month 1** — institutional followers committing once the anchor is on-chain.\n• **Three small lenders (5% each) at months 2, 3, 4** — top-up capital filling the rest of the commitment ladder.\n\nBorrowers draw in two waves:\n\n• **Wave 1 (months 0–6):** 100 borrowers draw on a smooth cadence (~one every 1.8 days). This continuous origination pace mirrors how active managers like [Maple Finance](https://docs.maple.finance/cash-management-pool/overview), [Goldfinch](https://www.goldfinch.finance/), and [Centrifuge / Tinlake](https://docs.centrifuge.io/use/) operate — they source and underwrite deals continuously, deploying lender capital as it lands rather than parking it.\n• **Wave 2 (months 13–18):** 8 backfill borrowers replace 8 wave-1 borrowers who repay early. This models active capital recycling — pool managers redirect prepayment cash flow into new originations rather than letting capital sit idle.\n\nThe **target utilisation** slider rescales every borrower's debt proportionally to hit the chosen pool util. **90% is the institutional norm**: Maple's secured lending products explicitly target >90% sustained util via active deal sourcing; Aave-style passive pools tend to fluctuate around 70–80%. Push the slider down to model a sleepier pool, or up toward 99% to stress-test capacity-constrained behaviour.\n\nThis scenario is the closest analogue to how a real Profitr-style vault would behave in production — staggered deposits, gradual deployment, and continuous capital recycling.",
+    "A realistic 2-year ramp-up for an actively-managed tokenised credit pool. All times are in **months from pool launch (T=0)**. Five lenders deposit on a staggered schedule:\n\n• **Anchor (50%) at month 0** — underwriter LP committing at first close, before any deployment track record exists.\n• **Two mid-sized lenders (20% + 15%) at month 1** — institutional followers committing once the anchor is on-chain.\n• **10% top-up at month 2 + a final 5% small lender at month 3** — late capital filling the rest of the commitment ladder.\n\nBorrowers draw in two waves:\n\n• **Wave 1 (months 0–6):** 100 borrowers draw on a smooth cadence (~one every 1.8 days). This continuous origination pace mirrors how active managers like [Maple Finance](https://docs.maple.finance/cash-management-pool/overview), [Goldfinch](https://www.goldfinch.finance/), and [Centrifuge / Tinlake](https://docs.centrifuge.io/use/) operate — they source and underwrite deals continuously, deploying lender capital as it lands rather than parking it.\n• **Wave 2 (months 13–18):** 8 backfill borrowers replace 8 wave-1 borrowers who repay early. This models active capital recycling — pool managers redirect prepayment cash flow into new originations rather than letting capital sit idle.\n\nThe **target utilisation** slider rescales every borrower's debt proportionally to hit the chosen pool util. **90% is the institutional norm**: Maple's secured lending products explicitly target >90% sustained util via active deal sourcing; Aave-style passive pools tend to fluctuate around 70–80%. Push the slider down to model a sleepier pool, or up toward 99% to stress-test capacity-constrained behaviour.\n\nThis scenario is the closest analogue to how a real Profitr-style vault would behave in production — staggered deposits, gradual deployment, and continuous capital recycling.",
   defaultConfig: {
     targetUtil: 0.9,
     wave1Count: 100,
     wave2Count: 8,
+    wave1RampMonths: 6,
     lenders: [
       { id: 'Lender-1 (anchor 50%)', deposit: 5_000_000, enterAt: 0 },
       { id: 'Lender-2 (20%)', deposit: 2_000_000, enterAt: 1 / 12 },
       { id: 'Lender-3 (15%)', deposit: 1_500_000, enterAt: 1 / 12 },
-      { id: 'Lender-4 (5%)', deposit: 500_000, enterAt: 2 / 12 },
+      { id: 'Lender-4 (10%)', deposit: 1_000_000, enterAt: 2 / 12 },
       { id: 'Lender-5 (5%)', deposit: 500_000, enterAt: 3 / 12 },
-      { id: 'Lender-6 (5%)', deposit: 500_000, enterAt: 4 / 12 },
     ],
   },
-  tunables: ['targetUtil', 'wave1Count', 'wave2Count', 'lenders'],
-  build: ({ targetUtil, wave1Count, wave2Count, lenders }) => {
+  tunables: ['targetUtil', 'wave1Count', 'wave2Count', 'wave1RampMonths', 'lenders'],
+  build: ({ targetUtil, wave1Count, wave2Count, wave1RampMonths, lenders }) => {
     const tenor = 2;
     const lenderEvents: LenderEvent[] = lenders.map((l) => ({ ...l }));
     const totalDeposit = lenderEvents.reduce((s, l) => s + l.deposit, 0);
@@ -86,6 +93,8 @@ const dynamicFlowBuilder: ScenarioBuilder = {
     // wave2 picks `wave2Count` IDs from wave1 to mark as early-repay; can't
     // exceed wave1's count.
     const w2n = Math.max(0, Math.min(Math.floor(wave2Count), w1n));
+    // Ramp window in years (capped at tenor). 0 = all borrowers draw at T=0.
+    const rampYears = Math.max(0, Math.min(wave1RampMonths / 12, tenor));
     const wave1: BorrowerEvent[] = Array.from({ length: w1n }, (_, i) => {
       const pledged = 100_000 + rand() * 400_000;
       const ltv = 0.5 + rand() * 0.3;
@@ -93,7 +102,7 @@ const dynamicFlowBuilder: ScenarioBuilder = {
         id: i,
         pledged,
         debt: pledged * ltv,
-        borrowAt: (i / w1n) * (6 / 12),
+        borrowAt: (i / w1n) * rampYears,
         repayAt: tenor,
       };
     });
@@ -139,6 +148,7 @@ const pathologicalBuilder: ScenarioBuilder = {
     targetUtil: 0.85,
     wave1Count: 0,
     wave2Count: 0,
+    wave1RampMonths: 6,
     lenders: [
       { id: 'Anchor (90%)', deposit: 9_000_000, enterAt: 0 },
       { id: 'Late entrant (10%) @ 23m', deposit: 1_000_000, enterAt: 23 / 12 },
@@ -213,6 +223,7 @@ const progressiveBuilder: ScenarioBuilder = {
     targetUtil: 0.85,
     wave1Count: 0,
     wave2Count: 0,
+    wave1RampMonths: 6,
     lenders: [
       { id: 'Anchor (50%)', deposit: 5_000_000, enterAt: 0 },
       { id: 'Late @ 6m (12.5%)', deposit: 1_250_000, enterAt: 6 / 12 },
